@@ -1,7 +1,19 @@
+# Dependencies
 node_modules/
 output.css
+
+# Logs
 *.log
+
+# System files
 .DS_Store
+
+# Environment variables
 .env
+
+# Local tools and installers (optional)
 codium_1.101.03933_amd64.deb
 tailwindcss
+
+# Deployment
+.vercel/
