@@ -1,0 +1,29 @@
+{
+	"name": "sveltekit-frontend",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-auto": "^6.0.0",
+		"@sveltejs/kit": "^2.16.0",
+		"@sveltejs/vite-plugin-svelte": "^5.0.0",
+		"@tailwindcss/postcss": "^4.1.11",
+		"@tailwindcss/vite": "^4.0.0",
+		"autoprefixer": "^10.4.21",
+		"daisyui": "^5.0.43",
+		"postcss": "^8.5.6",
+		"svelte": "^5.0.0",
+		"tailwindcss": "^4.1.11",
+		"vite": "^6.2.6"
+	},
+	"dependencies": {
+		"@supabase/ssr": "^0.6.1",
+		"dotenv": "^16.6.0"
+	}
+}
