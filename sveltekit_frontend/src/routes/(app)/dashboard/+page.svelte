@@ -43,6 +43,10 @@
   let toastTimer = null;
   let pendingDelete = null;
 
+  let warnShow = false;
+  let warnMsg = '';
+  function showWarn(msg) { warnMsg = msg; warnShow = true; }
+
   function showToast(msg, type = 'error') {
     toastMsg = msg;
     toastType = type;
@@ -61,6 +65,13 @@
   }
 
   $: if (showAddForm) tick().then(() => nameInput?.focus());
+
+  let confirmShow = false;
+  let confirmMessage = '';
+  let confirmAction = null;
+  function askConfirm(message, action) { confirmMessage = message; confirmAction = action; confirmShow = true; }
+  function doConfirm() { const fn = confirmAction; confirmShow = false; confirmAction = null; fn?.(); }
+  function dismissConfirm() { confirmShow = false; confirmAction = null; }
 
   $: todoItems = filteredItems.filter(i => !i.is_done && (!shoppingMode || i.quantity > 0));
   $: doneItems = filteredItems.filter(i => i.is_done);
@@ -196,6 +207,7 @@
   }
 
   async function toggleCollected(item) {
+    if (!shoppingMode) { showWarn("You can't collect an item unless you are in Shopping Mode!"); return; }
     const { error } = await supabase.from('grocery_items').update({ is_done: !item.is_done }).eq('id', item.id);
     if (error) { showToast('Failed to update item'); return; }
     await loadItems();
@@ -306,6 +318,12 @@
     text-overflow: ellipsis;
   }
   .topbar-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+  .topbar-actions-row { display: flex; align-items: center; gap: 8px; }
+  .print-btn {
+    font-size: 18px; line-height: 1; text-decoration: none;
+    padding: 4px; border-radius: 8px; transition: background 0.15s;
+  }
+  .print-btn:hover { background: rgba(255,255,255,0.1); }
   .add-store-btn {
     font-size: 11px; color: rgba(255,255,255,0.5);
     border: none; background: transparent;
@@ -760,6 +778,32 @@
     flex-shrink: 0;
   }
   .toast-undo:hover { background: rgba(255,255,255,0.3); }
+
+  :global(.confirm-overlay) {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; padding: 24px;
+  }
+  :global(.confirm-box) {
+    background: #fff; border-radius: 16px;
+    padding: 24px 20px 20px;
+    width: 100%; max-width: 320px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
+  :global(.confirm-msg) {
+    font-size: 15px; font-weight: 600; color: #1a1a2e;
+    text-align: center; margin-bottom: 20px; line-height: 1.4;
+  }
+  :global(.confirm-btns) { display: flex; gap: 10px; }
+  :global(.confirm-cancel) {
+    flex: 1; background: #f0ede8; border: none; border-radius: 10px;
+    padding: 10px; font-size: 14px; color: #555; cursor: pointer;
+  }
+  :global(.confirm-ok) {
+    flex: 1; background: #e24b4a; border: none; border-radius: 10px;
+    padding: 10px; font-size: 14px; font-weight: 600; color: #fff; cursor: pointer;
+  }
 </style>
 
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -772,7 +816,10 @@
       <div class="topbar-sub">{data.user.email}</div>
     </div>
     <div class="topbar-actions">
-      <button class="add-store-btn" on:click={() => showNewStoreInput = !showNewStoreInput}>+ Store</button>
+      <div class="topbar-actions-row">
+        <button class="add-store-btn" on:click={() => showNewStoreInput = !showNewStoreInput}>+ Store</button>
+        <a href="/print" class="print-btn" title="Print list">🖨️</a>
+      </div>
       <button class="logout-btn" on:click={logout}>Log out</button>
     </div>
   </div>
@@ -791,7 +838,7 @@
         <span
           class="delete-dot {store.itemCount === 0 ? 'can-delete' : ''}"
           title={store.itemCount === 0 ? 'Delete store' : 'Remove all items first'}
-          on:click|stopPropagation={() => store.itemCount === 0 && deleteStore(store)}
+          on:click|stopPropagation={() => store.itemCount === 0 && askConfirm(`Delete "${store.name}"?`, () => deleteStore(store))}
         >✕</span>
       </button>
     {/each}
@@ -831,7 +878,7 @@
         />
       </div>
       <button class="tool-btn primary" on:click={() => { showAddForm = !showAddForm; newItem = { id: null, name: '', type: 'Produce', quantity: 1, aisle: 'Produce', note: '', location: '' }; }}>+</button>
-      <button class="tool-btn" title="Reset all" on:click={resetQuantitiesAndCollected}>↺</button>
+      <button class="tool-btn" title="Reset all" on:click={() => askConfirm('Reset all quantities and collected items?', resetQuantitiesAndCollected)}>↺</button>
       <button class="tool-btn {shoppingMode ? 'shopping-active' : ''}" title="Shopping mode" on:click={() => shoppingMode = !shoppingMode}>🛒</button>
     </div>
 
@@ -882,7 +929,7 @@
                   <button class="action-btn edit" on:click|stopPropagation={() => editItem(item)}>
                     <span class="action-icon">✎</span>Edit
                   </button>
-                  <button class="action-btn delete" on:click|stopPropagation={() => deleteItem(item.id)}>
+                  <button class="action-btn delete" on:click|stopPropagation={() => askConfirm(`Delete "${item.name}"?`, () => deleteItem(item.id))}>
                     <span class="action-icon">✕</span>Delete
                   </button>
                 </div>
@@ -912,7 +959,7 @@
                 <span class="action-icon">✎</span>
                 Edit
               </button>
-              <button class="action-btn delete" on:click|stopPropagation={() => deleteItem(item.id)}>
+              <button class="action-btn delete" on:click|stopPropagation={() => askConfirm(`Delete "${item.name}"?`, () => deleteItem(item.id))}>
                 <span class="action-icon">✕</span>
                 Delete
               </button>
@@ -945,7 +992,7 @@
                 <span class="action-icon">✎</span>
                 Edit
               </button>
-              <button class="action-btn delete" on:click|stopPropagation={() => deleteItem(item.id)}>
+              <button class="action-btn delete" on:click|stopPropagation={() => askConfirm(`Delete "${item.name}"?`, () => deleteItem(item.id))}>
                 <span class="action-icon">✕</span>
                 Delete
               </button>
@@ -980,7 +1027,7 @@
       <div class="footer-stat">
         <strong>{todoItems.length}</strong> remaining · <strong>{doneItems.length}</strong> collected
       </div>
-      <button class="reset-btn" on:click={resetQuantitiesAndCollected}>Reset all</button>
+      <button class="reset-btn" on:click={() => askConfirm('Reset all quantities and collected items?', resetQuantitiesAndCollected)}>Reset all</button>
     </div>
 
   {/if}
@@ -996,3 +1043,26 @@
     </div>
   {/if}
 </div>
+
+{#if confirmShow}
+  <div class="confirm-overlay" on:click={dismissConfirm}>
+    <div class="confirm-box" on:click|stopPropagation>
+      <div class="confirm-msg">{confirmMessage}</div>
+      <div class="confirm-btns">
+        <button class="confirm-cancel" on:click={dismissConfirm}>Cancel</button>
+        <button class="confirm-ok" on:click={doConfirm}>Yes, do it</button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+{#if warnShow}
+  <div class="confirm-overlay" on:click={() => warnShow = false}>
+    <div class="confirm-box" on:click|stopPropagation>
+      <div class="confirm-msg">{warnMsg}</div>
+      <div class="confirm-btns">
+        <button class="confirm-ok" style="flex:1" on:click={() => warnShow = false}>Got it</button>
+      </div>
+    </div>
+  </div>
+{/if}

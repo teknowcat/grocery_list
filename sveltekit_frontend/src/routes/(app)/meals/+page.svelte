@@ -204,14 +204,6 @@
     await loadHistory();
   }
 
-  async function resetAllCounts() {
-    await supabase.from('meal_week_history').delete().not('meal_id', 'is', null);
-    await supabase.from('meals').update({ week_count: 0 }).not('id', 'is', null);
-    await loadMeals();
-    await loadHistory();
-    showToast('All counts reset', 'info');
-  }
-
   async function logout() {
     await supabase.auth.signOut();
     window.location.href = '/login';
@@ -263,8 +255,7 @@
     <div class="toolbar-actions">
       <button class="surprise-btn" on:click={pickSurprise} title="Surprise me">🎲</button>
       <button class="month-btn {showPastMonth ? 'active' : ''}" on:click={() => showPastMonth = !showPastMonth} title="Past 30 days">📅</button>
-      <button class="reset-counts-btn" on:click={() => askConfirm('Reset ALL meal counts and history?', resetAllCounts)} title="Reset all counts">↺ Counts</button>
-      <button class="add-btn" on:click={() => { showAddForm = !showAddForm; newMeal = { name: '', type: 'Stew', platform: 'Stove Top' }; }}>+ Add</button>
+<button class="add-btn" on:click={() => { showAddForm = !showAddForm; newMeal = { name: '', type: 'Stew', platform: 'Stove Top' }; }}>+ Add</button>
     </div>
   </div>
 
@@ -486,13 +477,6 @@
     padding: 6px 14px; background: transparent; cursor: pointer; transition: all 0.15s;
   }
   .add-btn:hover { background: #f0eeff; }
-
-  .reset-counts-btn {
-    font-size: 12px; font-weight: 500; color: #999;
-    border: 0.5px solid #d8d5d0; border-radius: 20px;
-    padding: 6px 12px; background: transparent; cursor: pointer; transition: all 0.15s;
-  }
-  .reset-counts-btn:hover { color: #e24b4a; border-color: #e24b4a; background: #fef0f0; }
 
   .add-form {
     margin: 0 16px 12px;
