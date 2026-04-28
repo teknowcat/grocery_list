@@ -12,7 +12,7 @@
   let printDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   function filteredItems(storeItems: any[], mode: string) {
-    if (mode === 'shopping') return storeItems.filter(i => i.quantity > 0);
+    if (mode === 'shopping') return storeItems.filter(i => Number(i.quantity) > 0);
     return storeItems;
   }
 
