@@ -25,6 +25,12 @@
   let showPastMonth = false;
   let monthHistory = [];
   let countEdit = { id: null, value: '' };
+  let confirmShow = false;
+  let confirmMessage = '';
+  let confirmAction = null;
+  function askConfirm(message, action) { confirmMessage = message; confirmAction = action; confirmShow = true; }
+  function doConfirm() { const fn = confirmAction; confirmShow = false; confirmAction = null; fn?.(); }
+  function dismissConfirm() { confirmShow = false; confirmAction = null; }
 
   function showToast(msg, type = 'error') {
     toastMsg = msg;
@@ -198,6 +204,14 @@
     await loadHistory();
   }
 
+  async function resetAllCounts() {
+    await supabase.from('meal_week_history').delete().not('meal_id', 'is', null);
+    await supabase.from('meals').update({ week_count: 0 }).not('id', 'is', null);
+    await loadMeals();
+    await loadHistory();
+    showToast('All counts reset', 'info');
+  }
+
   async function logout() {
     await supabase.auth.signOut();
     window.location.href = '/login';
@@ -249,6 +263,7 @@
     <div class="toolbar-actions">
       <button class="surprise-btn" on:click={pickSurprise} title="Surprise me">🎲</button>
       <button class="month-btn {showPastMonth ? 'active' : ''}" on:click={() => showPastMonth = !showPastMonth} title="Past 30 days">📅</button>
+      <button class="reset-counts-btn" on:click={() => askConfirm('Reset ALL meal counts and history?', resetAllCounts)} title="Reset all counts">↺ Counts</button>
       <button class="add-btn" on:click={() => { showAddForm = !showAddForm; newMeal = { name: '', type: 'Stew', platform: 'Stove Top' }; }}>+ Add</button>
     </div>
   </div>
@@ -370,7 +385,7 @@
                   <button class="action-btn week {meal.week_pick ? 'week-on' : ''}" on:click={() => toggleWeekPick(meal)}>
                     {meal.week_pick ? '📅 This week ✓' : '📅 This week'}{meal.week_count > 0 ? ` ×${meal.week_count}` : ''}
                   </button>
-                  <button class="action-btn del" on:click={() => deleteMeal(meal.id)}>Delete</button>
+                  <button class="action-btn del" on:click={() => askConfirm(`Delete "${meal.name}"?`, () => deleteMeal(meal.id))}>Delete</button>
                 </div>
                 <div class="count-edit-row">
                   <span class="count-edit-label">All-time count</span>
@@ -396,7 +411,20 @@
       {/if}
     </div>
   {/if}
+
 </div>
+
+{#if confirmShow}
+  <div class="confirm-overlay" on:click={dismissConfirm}>
+    <div class="confirm-box" on:click|stopPropagation>
+      <div class="confirm-msg">{confirmMessage}</div>
+      <div class="confirm-btns">
+        <button class="confirm-cancel" on:click={dismissConfirm}>Cancel</button>
+        <button class="confirm-ok" on:click={doConfirm}>Yes, do it</button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   :global(body) {
@@ -458,6 +486,13 @@
     padding: 6px 14px; background: transparent; cursor: pointer; transition: all 0.15s;
   }
   .add-btn:hover { background: #f0eeff; }
+
+  .reset-counts-btn {
+    font-size: 12px; font-weight: 500; color: #999;
+    border: 0.5px solid #d8d5d0; border-radius: 20px;
+    padding: 6px 12px; background: transparent; cursor: pointer; transition: all 0.15s;
+  }
+  .reset-counts-btn:hover { color: #e24b4a; border-color: #e24b4a; background: #fef0f0; }
 
   .add-form {
     margin: 0 16px 12px;
@@ -684,4 +719,30 @@
     white-space: nowrap; flex-shrink: 0;
   }
   .toast-undo:hover { background: rgba(255,255,255,0.3); }
+
+  :global(.confirm-overlay) {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; padding: 24px;
+  }
+  :global(.confirm-box) {
+    background: #fff; border-radius: 16px;
+    padding: 24px 20px 20px;
+    width: 100%; max-width: 320px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
+  :global(.confirm-msg) {
+    font-size: 15px; font-weight: 600; color: #1a1a2e;
+    text-align: center; margin-bottom: 20px; line-height: 1.4;
+  }
+  :global(.confirm-btns) { display: flex; gap: 10px; }
+  :global(.confirm-cancel) {
+    flex: 1; background: #f0ede8; border: none; border-radius: 10px;
+    padding: 10px; font-size: 14px; color: #555; cursor: pointer;
+  }
+  :global(.confirm-ok) {
+    flex: 1; background: #e24b4a; border: none; border-radius: 10px;
+    padding: 10px; font-size: 14px; font-weight: 600; color: #fff; cursor: pointer;
+  }
 </style>
