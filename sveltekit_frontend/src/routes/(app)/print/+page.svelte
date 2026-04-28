@@ -11,8 +11,8 @@
   let printMode: 'all' | 'shopping' = 'all';
   let printDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  function filteredItems(storeItems: any[]) {
-    if (printMode === 'shopping') return storeItems.filter(i => i.quantity > 0);
+  function filteredItems(storeItems: any[], mode: string) {
+    if (mode === 'shopping') return storeItems.filter(i => i.quantity > 0);
     return storeItems;
   }
 
@@ -79,14 +79,14 @@
               <span class="label-qty">Qty</span>
             </div>
             <div class="col-rule"></div>
-            {#each filteredItems(itemsByStore[store.name] || []) as item}
+            {#each filteredItems(itemsByStore[store.name] || [], printMode) as item}
               <div class="print-row">
                 <span class="checkbox">□</span>
                 <span class="item-name">{item.name}</span>
                 <span class="qty-blank">{printMode === 'shopping' ? item.quantity : '____'}</span>
               </div>
             {/each}
-            {#if filteredItems(itemsByStore[store.name] || []).length === 0}
+            {#if filteredItems(itemsByStore[store.name] || [], printMode).length === 0}
               <div class="empty-col">No items</div>
             {/if}
           </div>
