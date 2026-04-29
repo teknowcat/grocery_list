@@ -620,6 +620,25 @@
   .item-name.done { text-decoration: line-through; text-decoration-color: #e24b4a; text-decoration-thickness: 2px; color: #999; font-weight: 400; }
   .item-sub { font-size: 11px; color: #aaa; margin-top: 2px; }
 
+  .card-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .qty-total {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
   .person-badges {
     display: flex;
     flex-direction: column;
@@ -962,10 +981,15 @@
                     <div class="item-name">{item.name}</div>
                     <div class="item-sub">{item.type}{item.note ? ' · ' + item.note : ''}</div>
                   </div>
-                  <div class="person-badges">
-                    <span class="person-badge">C·{item.qty_cortez ?? '—'}</span>
-                    <span class="person-badge">B·{item.qty_bartile ?? '—'}</span>
-                    <span class="person-badge">D·{item.qty_dean ?? '—'}</span>
+                  <div class="card-right">
+                    <div class="qty-total">{item.quantity || 0}</div>
+                    {#if item.qty_cortez != null || item.qty_bartile != null || item.qty_dean != null}
+                      <div class="person-badges">
+                        <span class="person-badge">C·{item.qty_cortez ?? '—'}</span>
+                        <span class="person-badge">B·{item.qty_bartile ?? '—'}</span>
+                        <span class="person-badge">D·{item.qty_dean ?? '—'}</span>
+                      </div>
+                    {/if}
                   </div>
                 </div>
               </div>
@@ -993,10 +1017,15 @@
                 <div class="item-name">{item.name}</div>
                 <div class="item-sub">{item.type}{item.aisle ? ' · ' + item.aisle : ''}{item.note ? ' · ' + item.note : ''}</div>
               </div>
-              <div class="person-badges">
-                <span class="person-badge">C·{item.qty_cortez ?? '—'}</span>
-                <span class="person-badge">B·{item.qty_bartile ?? '—'}</span>
-                <span class="person-badge">D·{item.qty_dean ?? '—'}</span>
+              <div class="card-right">
+                <div class="qty-total">{item.quantity || 0}</div>
+                {#if item.qty_cortez != null || item.qty_bartile != null || item.qty_dean != null}
+                  <div class="person-badges">
+                    <span class="person-badge">C·{item.qty_cortez ?? '—'}</span>
+                    <span class="person-badge">B·{item.qty_bartile ?? '—'}</span>
+                    <span class="person-badge">D·{item.qty_dean ?? '—'}</span>
+                  </div>
+                {/if}
               </div>
             </div>
           </div>
@@ -1028,10 +1057,15 @@
                 <div class="item-name done">{item.name}</div>
                 <div class="item-sub">{item.type}{item.aisle ? ' · ' + item.aisle : ''}</div>
               </div>
-              <div class="person-badges">
-                <span class="person-badge">C·{item.qty_cortez ?? '—'}</span>
-                <span class="person-badge">B·{item.qty_bartile ?? '—'}</span>
-                <span class="person-badge">D·{item.qty_dean ?? '—'}</span>
+              <div class="card-right">
+                <div class="qty-total">{item.quantity || 0}</div>
+                {#if item.qty_cortez != null || item.qty_bartile != null || item.qty_dean != null}
+                  <div class="person-badges">
+                    <span class="person-badge">C·{item.qty_cortez ?? '—'}</span>
+                    <span class="person-badge">B·{item.qty_bartile ?? '—'}</span>
+                    <span class="person-badge">D·{item.qty_dean ?? '—'}</span>
+                  </div>
+                {/if}
               </div>
             </div>
           </div>
