@@ -630,7 +630,7 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: #1a1a2e;
+    background: #7c6ff7;
     color: #fff;
     font-size: 15px;
     font-weight: 700;
