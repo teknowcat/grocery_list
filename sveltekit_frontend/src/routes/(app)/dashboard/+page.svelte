@@ -16,7 +16,7 @@
   let sortColumn = '';
   let sortDirection = 'asc';
   let showAddForm = false;
-  let newItem = { id: null, name: '', type: 'Produce', quantity: 1, aisle: 'Produce', note: '', location: '' };
+  let newItem = { id: null, name: '', type: 'Produce', qty_cortez: null, qty_bartile: null, qty_dean: null, aisle: 'Produce', note: '', location: '' };
   let nameInput;
   let swipedItemId = null;
 
@@ -213,30 +213,33 @@
     await loadItems();
   }
 
-  async function updateQuantity(item, newQuantity) {
-    if (newQuantity < 0) newQuantity = 0;
-    const { error } = await supabase.from('grocery_items').update({ quantity: newQuantity }).eq('id', item.id);
-    if (error) { showToast('Failed to update quantity'); return; }
-    await loadItems();
-  }
-
   async function resetQuantitiesAndCollected() {
     const { error } = await supabase
       .from('grocery_items')
-      .update({ quantity: 0, is_done: false })
+      .update({ quantity: 0, qty_cortez: null, qty_bartile: null, qty_dean: null, is_done: false })
       .eq('location', selectedStore);
     if (error) { showToast('Reset failed'); return; }
     await loadItems();
   }
 
+  function sumPersonQtys(item: typeof newItem) {
+    return (Number(item.qty_cortez) || 0) + (Number(item.qty_bartile) || 0) + (Number(item.qty_dean) || 0);
+  }
+
+  const emptyItem = () => ({ id: null, name: '', type: 'Produce', qty_cortez: null, qty_bartile: null, qty_dean: null, aisle: 'Produce', note: '', location: '' });
+
   async function addOrFindItem() {
     if (!newItem.name.trim()) return;
+    const quantity = sumPersonQtys(newItem);
 
     if (newItem.id) {
       const { error } = await supabase.from('grocery_items').update({
         name: newItem.name.trim(),
         type: newItem.type,
-        quantity: newItem.quantity,
+        quantity,
+        qty_cortez: newItem.qty_cortez || null,
+        qty_bartile: newItem.qty_bartile || null,
+        qty_dean: newItem.qty_dean || null,
         aisle: newItem.aisle,
         note: newItem.note || null,
         location: newItem.location
@@ -244,7 +247,7 @@
       if (error) { showToast('Failed to save item'); return; }
       await loadItems();
       showAddForm = false;
-      newItem = { id: null, name: '', type: 'Produce', quantity: 1, aisle: 'Produce', note: '', location: '' };
+      newItem = emptyItem();
       return;
     }
 
@@ -257,7 +260,10 @@
         name: newItem.name.trim(),
         type: newItem.type,
         location: selectedStore,
-        quantity: newItem.quantity,
+        quantity,
+        qty_cortez: newItem.qty_cortez || null,
+        qty_bartile: newItem.qty_bartile || null,
+        qty_dean: newItem.qty_dean || null,
         aisle: newItem.aisle,
         note: newItem.note || null,
         is_done: false,
@@ -266,7 +272,7 @@
       if (insertError) { showToast('Failed to add item'); return; }
       await loadItems();
       showAddForm = false;
-      newItem = { id: null, name: '', type: 'Produce', quantity: 1, aisle: 'Produce', note: '', location: '' };
+      newItem = emptyItem();
     }
   }
 
@@ -614,35 +620,39 @@
   .item-name.done { text-decoration: line-through; text-decoration-color: #e24b4a; text-decoration-thickness: 2px; color: #999; font-weight: 400; }
   .item-sub { font-size: 11px; color: #aaa; margin-top: 2px; }
 
-  .qty-ctrl {
+  .person-badges {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 3px;
     flex-shrink: 0;
+    align-items: flex-end;
   }
-  .qty-btn {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 0.5px solid #e0deda;
-    background: #f5f4f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
-    cursor: pointer;
-    color: #555;
-    line-height: 1;
-    transition: all 0.15s;
-    flex-shrink: 0;
-  }
-  .qty-btn:hover { border-color: #7c6ff7; color: #7c6ff7; }
-  .qty-val {
-    font-size: 14px;
+  .person-badge {
+    font-size: 10px;
     font-weight: 600;
-    color: #1a1a2e;
-    min-width: 18px;
-    text-align: center;
+    color: #7c6ff7;
+    background: #f0eeff;
+    border-radius: 5px;
+    padding: 1px 6px;
+    white-space: nowrap;
+  }
+
+  .qty-persons {
+    display: flex;
+    gap: 8px;
+  }
+  .qty-person-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 3px;
+  }
+  .qty-person-lbl {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
   }
 
   .footer-bar {
@@ -877,7 +887,7 @@
           on:input={applyFilters}
         />
       </div>
-      <button class="tool-btn primary" on:click={() => { showAddForm = !showAddForm; newItem = { id: null, name: '', type: 'Produce', quantity: 1, aisle: 'Produce', note: '', location: '' }; }}>+</button>
+      <button class="tool-btn primary" on:click={() => { showAddForm = !showAddForm; newItem = emptyItem(); }}>+</button>
       <button class="tool-btn" title="Reset all" on:click={() => askConfirm('Reset all quantities and collected items?', resetQuantitiesAndCollected)}>↺</button>
       <button class="tool-btn {shoppingMode ? 'shopping-active' : ''}" title="Shopping mode" on:click={() => shoppingMode = !shoppingMode}>🛒</button>
     </div>
@@ -903,7 +913,20 @@
           <select class="form-select" bind:value={newItem.aisle}>
             {#each aisleOptions as aisle}<option>{aisle}</option>{/each}
           </select>
-          <input class="form-input" type="number" bind:value={newItem.quantity} min="1" placeholder="Qty" />
+          <div class="form-full qty-persons">
+            <div class="qty-person-group">
+              <span class="qty-person-lbl">Cortez</span>
+              <input class="form-input" type="number" bind:value={newItem.qty_cortez} min="0" placeholder="0" />
+            </div>
+            <div class="qty-person-group">
+              <span class="qty-person-lbl">Bartile</span>
+              <input class="form-input" type="number" bind:value={newItem.qty_bartile} min="0" placeholder="0" />
+            </div>
+            <div class="qty-person-group">
+              <span class="qty-person-lbl">Dean</span>
+              <input class="form-input" type="number" bind:value={newItem.qty_dean} min="0" placeholder="0" />
+            </div>
+          </div>
           <input class="form-input form-full" type="text" bind:value={newItem.note} placeholder="Note (optional)" />
           {#if newItem.id}
             <select class="form-select form-full" bind:value={newItem.location}>
@@ -939,10 +962,10 @@
                     <div class="item-name">{item.name}</div>
                     <div class="item-sub">{item.type}{item.note ? ' · ' + item.note : ''}</div>
                   </div>
-                  <div class="qty-ctrl">
-                    <button class="qty-btn" on:click|stopPropagation={() => updateQuantity(item, item.quantity - 1)}>−</button>
-                    <span class="qty-val">{item.quantity}</span>
-                    <button class="qty-btn" on:click|stopPropagation={() => updateQuantity(item, item.quantity + 1)}>+</button>
+                  <div class="person-badges">
+                    <span class="person-badge">C·{item.qty_cortez ?? '—'}</span>
+                    <span class="person-badge">B·{item.qty_bartile ?? '—'}</span>
+                    <span class="person-badge">D·{item.qty_dean ?? '—'}</span>
                   </div>
                 </div>
               </div>
@@ -970,10 +993,10 @@
                 <div class="item-name">{item.name}</div>
                 <div class="item-sub">{item.type}{item.aisle ? ' · ' + item.aisle : ''}{item.note ? ' · ' + item.note : ''}</div>
               </div>
-              <div class="qty-ctrl">
-                <button class="qty-btn" on:click|stopPropagation={() => updateQuantity(item, item.quantity - 1)}>−</button>
-                <span class="qty-val">{item.quantity}</span>
-                <button class="qty-btn" on:click|stopPropagation={() => updateQuantity(item, item.quantity + 1)}>+</button>
+              <div class="person-badges">
+                <span class="person-badge">C·{item.qty_cortez ?? '—'}</span>
+                <span class="person-badge">B·{item.qty_bartile ?? '—'}</span>
+                <span class="person-badge">D·{item.qty_dean ?? '—'}</span>
               </div>
             </div>
           </div>
@@ -1005,10 +1028,10 @@
                 <div class="item-name done">{item.name}</div>
                 <div class="item-sub">{item.type}{item.aisle ? ' · ' + item.aisle : ''}</div>
               </div>
-              <div class="qty-ctrl">
-                <button class="qty-btn" on:click|stopPropagation={() => updateQuantity(item, item.quantity - 1)}>−</button>
-                <span class="qty-val">{item.quantity}</span>
-                <button class="qty-btn" on:click|stopPropagation={() => updateQuantity(item, item.quantity + 1)}>+</button>
+              <div class="person-badges">
+                <span class="person-badge">C·{item.qty_cortez ?? '—'}</span>
+                <span class="person-badge">B·{item.qty_bartile ?? '—'}</span>
+                <span class="person-badge">D·{item.qty_dean ?? '—'}</span>
               </div>
             </div>
           </div>
