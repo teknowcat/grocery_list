@@ -870,7 +870,7 @@
 
   {#if !selectedStore}
     <div class="select-prompt">
-      <div class="select-prompt-icon">🏪</div>
+      <div class="select-prompt-icon">🏬</div>
       <div class="select-prompt-text">Select a store to start shopping</div>
     </div>
   {:else if loading}
