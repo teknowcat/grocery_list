@@ -33,7 +33,7 @@
   };
 
   const itemTypes = ['Baking', 'Beans', 'Breads', 'Canned', 'Condiments', 'Dairy', 'Deli', 'Frozen', 'Grains', 'Household', 'Meat', 'Produce', 'Snacks', 'Spices', 'Coffee / Tea', 'Drinks', 'Herbs', 'Kitchen', 'Mexican'];
-  const aisleOptions = ['Dairy', 'Deli / Butcher', 'Produce', 'Frozen', 'Bakery / Breads', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
+  const aisleOptions = ['Unknown', 'Dairy', 'Deli / Butcher', 'Produce', 'Frozen', 'Bakery / Breads', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
 
   let shoppingMode = false;
   let shopSort = 'alpha';
